@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
-import { LLMHelper } from "realtime-ai";
+import { FunctionCallParams, LLMHelper } from "realtime-ai";
 import { DailyVoiceClient } from "realtime-ai-daily";
 import { VoiceClientAudio, VoiceClientProvider } from "realtime-ai-react";
 
@@ -33,6 +33,19 @@ export default function Home() {
     });
     const llmHelper = new LLMHelper({});
     voiceClient.registerHelper("llm", llmHelper);
+
+    llmHelper.handleFunctionCall(async (fn: FunctionCallParams) => {
+      const args = fn.arguments as any;
+      if (fn.functionName === "get_weather" && args.location) {
+        const response = await fetch(
+          `/api/weather?location=${encodeURIComponent(args.location)}`
+        );
+        const json = await response.json();
+        return json;
+      } else {
+        return { error: "couldnt fetch weather" };
+      }
+    });
 
     voiceClientRef.current = voiceClient;
   }, [showSplash]);
